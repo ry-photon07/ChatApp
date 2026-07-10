@@ -17,7 +17,7 @@ export function DeliveryStatus({ message, currentUserId, size = 16 }: DeliverySt
 
   if (recipientStatuses.length === 0) {
     return (
-      <span className="delivery-icon">
+      <span className="delivery-icon" style={{ display: 'inline-flex', color: 'var(--message-time-color)', opacity: 0.8 }} title="Sent">
         <Check size={size} />
       </span>
     );
@@ -30,7 +30,7 @@ export function DeliveryStatus({ message, currentUserId, size = 16 }: DeliverySt
 
   if (allRead) {
     return (
-      <span className="delivery-icon read" title="Read">
+      <span className="delivery-icon read" style={{ display: 'inline-flex', color: '#53bdeb' }} title="Read">
         <CheckCheck size={size} />
       </span>
     );
@@ -38,14 +38,14 @@ export function DeliveryStatus({ message, currentUserId, size = 16 }: DeliverySt
 
   if (anyDelivered) {
     return (
-      <span className="delivery-icon delivered" title="Delivered">
+      <span className="delivery-icon delivered" style={{ display: 'inline-flex', color: 'var(--message-time-color)', opacity: 0.8 }} title="Delivered">
         <CheckCheck size={size} />
       </span>
     );
   }
 
   return (
-    <span className="delivery-icon" title="Sent">
+    <span className="delivery-icon" style={{ display: 'inline-flex', color: 'var(--message-time-color)', opacity: 0.8 }} title="Sent">
       <Check size={size} />
     </span>
   );
