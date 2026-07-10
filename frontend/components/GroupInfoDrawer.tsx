@@ -97,57 +97,83 @@ export function GroupInfoDrawer({ conversation: conv, currentUserId, onClose }: 
     }
   };
 
+  const isDirect = conv.type === 'direct';
+  const otherMember = isDirect ? conv.members.find((m) => m.user_id !== currentUserId) : null;
+  const otherUser = otherMember?.user;
+
   return (
     <div className="info-drawer">
       <div className="info-drawer-header">
         <button className="icon-btn" onClick={onClose}>
           <X size={20} />
         </button>
-        <span style={{ fontWeight: 600, fontSize: 16, color: 'var(--text-primary)' }}>Group Info</span>
+        <span style={{ fontWeight: 600, fontSize: 16, color: 'var(--text-primary)' }}>
+          {isDirect ? 'Contact Info' : 'Group Info'}
+        </span>
       </div>
 
       <div className="info-drawer-content">
         {/* Hero */}
         <div className="info-drawer-hero">
-          <Avatar name={conv.name || 'Group'} size="xl" />
-
-          {editingName ? (
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', width: '100%', justifyContent: 'center' }}>
-              <input
-                className="form-input"
-                value={groupName}
-                onChange={(e) => setGroupName(e.target.value)}
-                style={{ maxWidth: 200, textAlign: 'center' }}
-                autoFocus
-                onKeyDown={(e) => e.key === 'Enter' && handleSaveName()}
-              />
-              <button className="btn btn-primary" onClick={handleSaveName} style={{ padding: '8px 12px' }}>Save</button>
-              <button className="btn btn-secondary" onClick={() => setEditingName(false)} style={{ padding: '8px 12px' }}>Cancel</button>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span className="info-drawer-name">{conv.name}</span>
-              {isAdmin && (
-                <button className="icon-btn" onClick={() => setEditingName(true)} title="Edit name">
-                  <Edit2 size={16} />
-                </button>
+          {isDirect ? (
+            <>
+              <Avatar user={otherUser} size="xl" showOnline={otherUser?.is_online} isOnline={otherUser?.is_online} />
+              <span className="info-drawer-name">{otherUser?.display_name}</span>
+              {otherUser?.username && (
+                <span className="info-drawer-meta" style={{ fontSize: 13, color: 'var(--signal-blue)' }}>
+                  @{otherUser.username}
+                </span>
               )}
-            </div>
-          )}
+              <span className="info-drawer-meta">{otherUser?.phone}</span>
+              {otherUser?.bio && (
+                <p style={{ fontSize: 13, color: 'var(--text-secondary)', textAlign: 'center', marginTop: 8 }}>
+                  {otherUser.bio}
+                </p>
+              )}
+            </>
+          ) : (
+            <>
+              <Avatar name={conv.name || 'Group'} size="xl" />
 
-          <span className="info-drawer-meta">
-            Group · {conv.members.length} members
-          </span>
+              {editingName ? (
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', width: '100%', justifyContent: 'center' }}>
+                  <input
+                    className="form-input"
+                    value={groupName}
+                    onChange={(e) => setGroupName(e.target.value)}
+                    style={{ maxWidth: 200, textAlign: 'center' }}
+                    autoFocus
+                    onKeyDown={(e) => e.key === 'Enter' && handleSaveName()}
+                  />
+                  <button className="btn btn-primary" onClick={handleSaveName} style={{ padding: '8px 12px' }}>Save</button>
+                  <button className="btn btn-secondary" onClick={() => setEditingName(false)} style={{ padding: '8px 12px' }}>Cancel</button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span className="info-drawer-name">{conv.name}</span>
+                  {isAdmin && (
+                    <button className="icon-btn" onClick={() => setEditingName(true)} title="Edit name">
+                      <Edit2 size={16} />
+                    </button>
+                  )}
+                </div>
+              )}
 
-          {conv.description && (
-            <p style={{ fontSize: 13, color: 'var(--text-secondary)', textAlign: 'center' }}>
-              {conv.description}
-            </p>
+              <span className="info-drawer-meta">
+                Group · {conv.members.length} members
+              </span>
+
+              {conv.description && (
+                <p style={{ fontSize: 13, color: 'var(--text-secondary)', textAlign: 'center' }}>
+                  {conv.description}
+                </p>
+              )}
+            </>
           )}
         </div>
 
         {/* Disappearing Messages */}
-        {isAdmin && (
+        {(isAdmin || isDirect) && (
           <div className="info-section">
             <div className="info-section-title">Disappearing Messages</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -171,89 +197,93 @@ export function GroupInfoDrawer({ conversation: conv, currentUserId, onClose }: 
           </div>
         )}
 
-        {/* Members */}
-        <div className="info-section">
-          <div className="info-section-title">{conv.members.length} Members</div>
+        {/* Members (Group Only) */}
+        {!isDirect && (
+          <div className="info-section">
+            <div className="info-section-title">{conv.members.length} Members</div>
 
-          {isAdmin && (
-            <div>
-              {showAddMember ? (
-                <div style={{ marginBottom: 12 }}>
-                  <input
-                    className="form-input"
-                    placeholder="Search users to add..."
-                    value={searchQ}
-                    onChange={(e) => handleSearchUsers(e.target.value)}
-                    autoFocus
-                  />
-                  {searchResults.map((u) => (
-                    <div key={u.id} className="user-item" onClick={() => handleAddMember(u.id, u.display_name)}>
-                      <Avatar user={u} size="sm" />
-                      <div className="user-item-info">
-                        <div className="user-item-name">{u.display_name}</div>
-                        <div className="user-item-phone">{u.phone}</div>
+            {isAdmin && (
+              <div>
+                {showAddMember ? (
+                  <div style={{ marginBottom: 12 }}>
+                    <input
+                      className="form-input"
+                      placeholder="Search users to add..."
+                      value={searchQ}
+                      onChange={(e) => handleSearchUsers(e.target.value)}
+                      autoFocus
+                    />
+                    {searchResults.map((u) => (
+                      <div key={u.id} className="user-item" onClick={() => handleAddMember(u.id, u.display_name)}>
+                        <Avatar user={u} size="sm" />
+                        <div className="user-item-info">
+                          <div className="user-item-name">{u.display_name}</div>
+                          <div className="user-item-phone">{u.phone}</div>
+                        </div>
+                        <UserPlus size={16} style={{ color: 'var(--signal-blue)' }} />
                       </div>
-                      <UserPlus size={16} style={{ color: 'var(--signal-blue)' }} />
-                    </div>
-                  ))}
-                  <button className="btn btn-ghost" onClick={() => setShowAddMember(false)} style={{ marginTop: 8 }}>Cancel</button>
-                </div>
-              ) : (
-                <button
-                  className="btn btn-ghost"
-                  style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}
-                  onClick={() => setShowAddMember(true)}
-                >
-                  <UserPlus size={18} /> Add member
-                </button>
-              )}
-            </div>
-          )}
-
-          {conv.members.map((member) => {
-            const isMe = member.user_id === currentUserId;
-            const canRemove = isAdmin && !isMe;
-
-            return (
-              <div key={member.id} className="member-item">
-                <Avatar user={member.user} size="sm" showOnline={member.user.is_online} isOnline={member.user.is_online} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontWeight: 500, fontSize: 14 }}>
-                      {member.user.display_name}{isMe ? ' (You)' : ''}
-                    </span>
-                    {member.role === 'admin' && (
-                      <Crown size={13} style={{ color: '#FFB300' }} />
-                    )}
+                    ))}
+                    <button className="btn btn-ghost" onClick={() => setShowAddMember(false)} style={{ marginTop: 8 }}>Cancel</button>
                   </div>
-                  <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-                    {member.user.phone}
-                  </div>
-                </div>
-                {canRemove && (
+                ) : (
                   <button
-                    className="icon-btn"
-                    onClick={() => handleRemoveMember(member.user_id, member.user.display_name)}
-                    title="Remove"
+                    className="btn btn-ghost"
+                    style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}
+                    onClick={() => setShowAddMember(true)}
                   >
-                    <UserMinus size={16} />
+                    <UserPlus size={18} /> Add member
                   </button>
                 )}
               </div>
-            );
-          })}
-        </div>
+            )}
 
-        {/* Leave group */}
-        <div className="info-section">
-          <button
-            className="btn"
-            style={{ color: '#e53935', width: '100%', justifyContent: 'flex-start', gap: 12, fontWeight: 500 }}
-            onClick={handleLeave}
-          >
-            <X size={18} /> Leave group
-          </button>
-        </div>
+            {conv.members.map((member) => {
+              const isMe = member.user_id === currentUserId;
+              const canRemove = isAdmin && !isMe;
+
+              return (
+                <div key={member.id} className="member-item">
+                  <Avatar user={member.user} size="sm" showOnline={member.user.is_online} isOnline={member.user.is_online} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontWeight: 500, fontSize: 14 }}>
+                        {member.user.display_name}{isMe ? ' (You)' : ''}
+                      </span>
+                      {member.role === 'admin' && (
+                        <Crown size={13} style={{ color: '#FFB300' }} />
+                      )}
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                      {member.user.phone}
+                    </div>
+                  </div>
+                  {canRemove && (
+                    <button
+                      className="icon-btn"
+                      onClick={() => handleRemoveMember(member.user_id, member.user.display_name)}
+                      title="Remove"
+                    >
+                      <UserMinus size={16} />
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Leave group (Group Only) */}
+        {!isDirect && (
+          <div className="info-section">
+            <button
+              className="btn"
+              style={{ color: '#e53935', width: '100%', justifyContent: 'flex-start', gap: 12, fontWeight: 500 }}
+              onClick={handleLeave}
+            >
+              <X size={18} /> Leave group
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

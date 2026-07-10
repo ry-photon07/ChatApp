@@ -48,7 +48,6 @@ export function NewChatModal({ onClose }: NewChatModalProps) {
       });
       addConversation(conv);
       setActiveConversation(conv.id);
-      router.push(`/conversations/${conv.id}`);
       onClose();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to create conversation');
@@ -74,7 +73,6 @@ export function NewChatModal({ onClose }: NewChatModalProps) {
       });
       addConversation(conv);
       setActiveConversation(conv.id);
-      router.push(`/conversations/${conv.id}`);
       toast.success(`Group "${groupName}" created!`);
       onClose();
     } catch (err: unknown) {

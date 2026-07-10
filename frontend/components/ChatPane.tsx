@@ -178,7 +178,7 @@ export function ChatPane({ conversationId }: ChatPaneProps) {
     <div className="chat-pane" style={{ flexDirection: 'row' }}>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         {/* Header */}
-        <div className="chat-header" onClick={() => conv.type === 'group' && setShowInfo(true)}>
+        <div className="chat-header" onClick={() => setShowInfo(true)}>
           <button
             className="icon-btn"
             style={{ display: 'none' }}
@@ -215,22 +215,18 @@ export function ChatPane({ conversationId }: ChatPaneProps) {
             <button className="icon-btn" title="Search messages" onClick={() => toast('🔍 Message search coming soon!')}>
               <Search size={20} />
             </button>
-            {conv.type === 'group' && (
-              <button className="icon-btn" title="Group info" onClick={() => setShowInfo(true)}>
-                <Info size={20} />
-              </button>
-            )}
+            <button className="icon-btn" title={conv.type === 'group' ? 'Group info' : 'Contact info'} onClick={() => setShowInfo(true)}>
+              <Info size={20} />
+            </button>
             <div style={{ position: 'relative' }} ref={dropdownRef}>
               <button className="icon-btn" title="More" onClick={() => setShowDropdown(!showDropdown)}>
                 <MoreVertical size={20} />
               </button>
               {showDropdown && (
                 <div className="dropdown">
-                  {conv.type === 'group' && (
-                    <button className="dropdown-item" onClick={() => { setShowInfo(true); setShowDropdown(false); }}>
-                      <Info size={16} /> Group info
-                    </button>
-                  )}
+                  <button className="dropdown-item" onClick={() => { setShowInfo(true); setShowDropdown(false); }}>
+                    <Info size={16} /> {conv.type === 'group' ? 'Group info' : 'Contact info'}
+                  </button>
                   <button className="dropdown-item" onClick={() => { handleToggleMute(); setShowDropdown(false); }}>
                     {isMuted ? <Volume2 size={16} /> : <VolumeX size={16} />}
                     {isMuted ? 'Unmute' : 'Mute'} notifications
@@ -334,8 +330,8 @@ export function ChatPane({ conversationId }: ChatPaneProps) {
         />
       </div>
 
-      {/* Group Info Drawer */}
-      {showInfo && conv.type === 'group' && (
+      {/* Conversation Info Drawer */}
+      {showInfo && (
         <GroupInfoDrawer
           conversation={conv}
           currentUserId={currentUser?.id || ''}

@@ -56,7 +56,6 @@ export function Sidebar({ onOpenSettings }: SidebarProps) {
     api.conversations.markRead(conv.id).catch(() => {});
     // Clear unread
     useStore.getState().updateConversation({ ...conv, unread_count: 0 });
-    router.push(`/conversations/${conv.id}`);
   };
 
   return (

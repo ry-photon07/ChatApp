@@ -2,8 +2,16 @@
 
 import React from 'react';
 import { MessageSquare } from 'lucide-react';
+import { useStore } from '@/lib/store';
+import { ChatPane } from '@/components/ChatPane';
 
 export default function ConversationsPage() {
+  const activeConversationId = useStore((s) => s.activeConversationId);
+
+  if (activeConversationId) {
+    return <ChatPane conversationId={activeConversationId} />;
+  }
+
   return (
     <div className="chat-pane">
       <div className="chat-pane-empty">

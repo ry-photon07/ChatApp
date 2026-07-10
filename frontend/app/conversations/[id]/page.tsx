@@ -1,10 +1,18 @@
 'use client';
 
-import React from 'react';
-import { use } from 'react';
-import { ChatPane } from '@/components/ChatPane';
+import { useEffect, use } from 'react';
+import { useRouter } from 'next/navigation';
+import { useStore } from '@/lib/store';
 
-export default function ConversationPage({ params }: { params: Promise<{ id: string }> }) {
+export default function ConversationFallbackPage({ params }: { params: Promise<{ id: string }> }) {
+  const router = useRouter();
   const { id } = use(params);
-  return <ChatPane conversationId={id} />;
+  const setActiveConversation = useStore((s) => s.setActiveConversation);
+
+  useEffect(() => {
+    setActiveConversation(id);
+    router.replace('/conversations');
+  }, [id, router, setActiveConversation]);
+
+  return null;
 }
