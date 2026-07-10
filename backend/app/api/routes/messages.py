@@ -165,6 +165,25 @@ async def upload_attachment(
     db.add(attachment)
     await db.commit()
 
+    # Load full message with newly uploaded attachment and broadcast update to WS
+    from app.api.routes.conversations import build_message_out
+    full_msg_result = await db.execute(
+        select(Message).where(Message.id == message_id).options(
+            joinedload(Message.sender),
+            joinedload(Message.statuses),
+            joinedload(Message.reactions).joinedload(MessageReaction.user),
+            joinedload(Message.attachments),
+        )
+    )
+    full_msg = full_msg_result.unique().scalar_one()
+    msg_out = await build_message_out(full_msg, db)
+
+    await manager.broadcast_to_conversation(
+        full_msg.conversation_id,
+        {"type": "new_message", "data": msg_out.model_dump(mode="json")},
+        db,
+    )
+
     return {
         "id": attachment.id,
         "file_name": attachment.file_name,

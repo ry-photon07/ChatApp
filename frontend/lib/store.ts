@@ -107,8 +107,10 @@ export const useStore = create<Store>()(
       addMessage: (convId, msg) =>
         set((s) => {
           const existing = s.messages[convId] || [];
-          if (existing.find((m) => m.id === msg.id)) return s;
-          const updated = [...existing, msg];
+          const idx = existing.findIndex((m) => m.id === msg.id);
+          const updated = idx >= 0
+            ? existing.map((m, i) => i === idx ? msg : m)
+            : [...existing, msg];
           // Update conversation's last message
           const conversations = s.conversations.map((c) =>
             c.id === convId
