@@ -23,6 +23,30 @@ from app.db.models import (
     Message, MessageStatus, MessageReaction
 )
 from app.core.security import create_access_token
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
+import hashlib
+import base64
+
+def encrypt_aes_cryptojs(text: str, passphrase: str) -> str:
+    if not text:
+        return ""
+    salt = os.urandom(8)
+    data = passphrase.encode("utf-8")
+    dx = b""
+    hash_buf = b""
+    while len(dx) < 48:
+        hash_buf = hashlib.md5(hash_buf + data + salt).digest()
+        dx += hash_buf
+    key = dx[:32]
+    iv = dx[32:48]
+    encoded = text.encode("utf-8")
+    pad_len = 16 - (len(encoded) % 16)
+    padded_text = encoded + bytes([pad_len] * pad_len)
+    encryptor = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend()).encryptor()
+    ciphertext = encryptor.update(padded_text) + encryptor.finalize()
+    payload = b"Salted__" + salt + ciphertext
+    return base64.b64encode(payload).decode("utf-8")
 from app.core.config import settings
 
 DATABASE_URL = "sqlite+aiosqlite:///./signal_clone.db"
@@ -277,7 +301,7 @@ async def seed():
                     id=str(uuid.uuid4()),
                     conversation_id=conv.id,
                     sender_id=sender.id,
-                    content=content,
+                    content=encrypt_aes_cryptojs(content, conv.id),
                     type="text",
                     created_at=msg_time,
                 )
@@ -372,7 +396,7 @@ async def seed():
                     id=str(uuid.uuid4()),
                     conversation_id=conv.id,
                     sender_id=sender.id,
-                    content=content,
+                    content=encrypt_aes_cryptojs(content, conv.id),
                     type="text",
                     created_at=msg_time,
                 )
