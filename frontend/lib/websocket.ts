@@ -5,6 +5,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useStore } from './store';
 import type { Message, WSMessage } from './types';
+import { decryptMessage } from './crypto';
 
 const WS_BASE = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000';
 
@@ -50,6 +51,9 @@ export function useWebSocket() {
         switch (msg.type) {
           case 'new_message': {
             const message = msg.data as unknown as Message;
+            if (message.content) {
+              message.content = decryptMessage(message.content, message.conversation_id);
+            }
             addMessage(message.conversation_id, message);
             break;
           }

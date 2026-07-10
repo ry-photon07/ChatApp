@@ -1,6 +1,4 @@
-// ============================================================
-// API Client — centralized fetch wrapper
-// ============================================================
+import { encryptMessage, decryptMessage } from './crypto';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -119,8 +117,15 @@ export const api = {
   },
 
   conversations: {
-    list: (archived = false) =>
-      request<import('./types').Conversation[]>(`/api/conversations?archived=${archived}`),
+    list: async (archived = false) => {
+      const convs = await request<import('./types').Conversation[]>(`/api/conversations?archived=${archived}`);
+      return convs.map((c) => {
+        if (c.last_message && c.last_message.content) {
+          c.last_message.content = decryptMessage(c.last_message.content, c.id);
+        }
+        return c;
+      });
+    },
 
     create: (data: {
       type: 'direct' | 'group';
@@ -133,25 +138,45 @@ export const api = {
         body: JSON.stringify(data),
       }),
 
-    get: (id: string) =>
-      request<import('./types').Conversation>(`/api/conversations/${id}`),
-
-    messages: (id: string, before?: string, limit = 50) => {
-      const params = new URLSearchParams({ limit: String(limit) });
-      if (before) params.set('before', before);
-      return request<import('./types').Message[]>(
-        `/api/conversations/${id}/messages?${params}`
-      );
+    get: async (id: string) => {
+      const c = await request<import('./types').Conversation>(`/api/conversations/${id}`);
+      if (c.last_message && c.last_message.content) {
+        c.last_message.content = decryptMessage(c.last_message.content, c.id);
+      }
+      return c;
     },
 
-    sendMessage: (
+    messages: async (id: string, before?: string, limit = 50) => {
+      const params = new URLSearchParams({ limit: String(limit) });
+      if (before) params.set('before', before);
+      const msgs = await request<import('./types').Message[]>(
+        `/api/conversations/${id}/messages?${params}`
+      );
+      return msgs.map((m) => {
+        if (m.content) {
+          m.content = decryptMessage(m.content, id);
+        }
+        return m;
+      });
+    },
+
+    sendMessage: async (
       convId: string,
       data: { content?: string; type?: string; reply_to_id?: string }
-    ) =>
-      request<import('./types').Message>(`/api/conversations/${convId}/messages`, {
+    ) => {
+      const payload = { ...data };
+      if (payload.content && payload.type === 'text') {
+        payload.content = encryptMessage(payload.content, convId);
+      }
+      const msg = await request<import('./types').Message>(`/api/conversations/${convId}/messages`, {
         method: 'POST',
-        body: JSON.stringify(data),
-      }),
+        body: JSON.stringify(payload),
+      });
+      if (msg.content) {
+        msg.content = decryptMessage(msg.content, convId);
+      }
+      return msg;
+    },
 
     update: (id: string, data: { name?: string; description?: string; disappearing_timer?: number }) =>
       request<import('./types').Conversation>(`/api/conversations/${id}`, {

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { Reply, Trash2, MoreHorizontal, Download, FileText } from 'lucide-react';
+import { Reply, Trash2, MoreHorizontal, Download, FileText, Lock } from 'lucide-react';
 import { Avatar } from './Avatar';
 import { DeliveryStatus } from './DeliveryStatus';
 import { useStore } from '@/lib/store';
@@ -194,7 +194,12 @@ export function MessageBubble({
           )}
 
           {/* Meta: time + delivery */}
-          <div className="message-meta">
+          <div className="message-meta" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            {!msg.is_deleted && (
+              <span title="End-to-End Encrypted (AES-256)" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                <Lock size={10} style={{ color: 'var(--message-time-color)', opacity: 0.7 }} />
+              </span>
+            )}
             {msg.edited_at && !msg.is_deleted && (
               <span style={{ fontSize: 10, color: 'var(--message-time-color)' }}>edited</span>
             )}
