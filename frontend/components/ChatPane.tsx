@@ -266,6 +266,7 @@ export function ChatPane({ conversationId }: ChatPaneProps) {
             </div>
           ) : (
             <div className="messages-inner">
+              <div style={{ marginTop: 'auto' }} />
               {hasMore && (
                 <div className="messages-load-more">
                   <button onClick={loadMore} disabled={loadingMore}>

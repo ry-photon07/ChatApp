@@ -187,7 +187,7 @@ export function MessageBubble({
           )}
 
           {/* Message text */}
-          {msg.content && (
+          {msg.content && !(hasAttachments && (msg.content === '📷 Image' || msg.content.startsWith('📎 '))) && (
             <div className="message-text">
               {msg.is_deleted ? '🚫 This message was deleted' : msg.content}
             </div>
