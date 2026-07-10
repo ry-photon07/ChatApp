@@ -436,7 +436,7 @@ async def send_message(
             joinedload(Message.attachments),
         )
     )
-    msg = msg_result.scalar_one()
+    msg = msg_result.unique().scalar_one()
 
     msg_out = await build_message_out(msg, db)
 
