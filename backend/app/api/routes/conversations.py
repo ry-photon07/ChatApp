@@ -611,7 +611,45 @@ async def mark_read(
     member = member_result.scalar_one_or_none()
     if member:
         member.last_read_at = datetime.utcnow()
+        
+        from app.db.models import MessageStatus as MS, Message
+        from sqlalchemy import update
+
+        # Select all status IDs of unread messages sent by others in this conversation
+        status_ids_result = await db.execute(
+            select(MS.id)
+            .join(Message, Message.id == MS.message_id)
+            .where(
+                Message.conversation_id == conv_id,
+                Message.sender_id != current_user.id,
+                MS.user_id == current_user.id,
+                MS.status != "read"
+            )
+        )
+        status_ids = [r[0] for r in status_ids_result.all()]
+        
+        if status_ids:
+            await db.execute(
+                update(MS)
+                .where(MS.id.in_(status_ids))
+                .values(status="read", updated_at=datetime.utcnow())
+            )
+        
         await db.commit()
+
+        # Broadcast read receipt to all members of the conversation
+        await manager.broadcast_to_conversation(
+            conv_id,
+            {
+                "type": "read_receipt",
+                "data": {
+                    "conversation_id": conv_id,
+                    "user_id": current_user.id,
+                    "read_at": datetime.utcnow().isoformat(),
+                }
+            },
+            db,
+        )
     return {"message": "Marked as read"}
 
 

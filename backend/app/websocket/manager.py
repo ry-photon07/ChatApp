@@ -198,15 +198,29 @@ async def websocket_endpoint(
                     elif msg_type == "read":
                         # Handle read receipt
                         conv_id = msg.get("conversation_id")
-                        from app.db.models import MessageStatus as MS
+                        from app.db.models import MessageStatus as MS, Message
                         from sqlalchemy import update
-                        await db.execute(
-                            update(MS).where(
+                        
+                        # Find status IDs for this conversation sent by others
+                        status_ids_result = await db.execute(
+                            select(MS.id)
+                            .join(Message, Message.id == MS.message_id)
+                            .where(
+                                Message.conversation_id == conv_id,
+                                Message.sender_id != user_id,
                                 MS.user_id == user_id,
-                                MS.status != "read",
-                            ).values(status="read")
+                                MS.status != "read"
+                            )
                         )
-                        await db.commit()
+                        status_ids = [r[0] for r in status_ids_result.all()]
+                        
+                        if status_ids:
+                            await db.execute(
+                                update(MS)
+                                .where(MS.id.in_(status_ids))
+                                .values(status="read", updated_at=datetime.utcnow())
+                            )
+                            await db.commit()
 
                         await manager.broadcast_to_conversation(
                             conv_id,

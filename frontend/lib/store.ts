@@ -36,6 +36,7 @@ interface Store {
   prependMessages: (convId: string, msgs: Message[]) => void;
   addMessage: (convId: string, msg: Message) => void;
   updateMessageStatus: (convId: string, msgId: string, userId: string, status: string) => void;
+  markAllMessagesRead: (convId: string, userId: string) => void;
   deleteMessage: (convId: string, msgId: string) => void;
   updateReaction: (data: Record<string, unknown>) => void;
 
@@ -155,6 +156,22 @@ export const useStore = create<Store>()(
                     }
                   : m
               ),
+            },
+          };
+        }),
+      markAllMessagesRead: (convId, userId) =>
+        set((s) => {
+          const msgs = s.messages[convId];
+          if (!msgs) return s;
+          return {
+            messages: {
+              ...s.messages,
+              [convId]: msgs.map((m) => ({
+                ...m,
+                statuses: m.statuses.map((st) =>
+                  st.user_id === userId ? { ...st, status: 'read' as const } : st
+                ),
+              })),
             },
           };
         }),

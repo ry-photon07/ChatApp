@@ -6,6 +6,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useStore } from './store';
 import type { Message, WSMessage } from './types';
 import { decryptMessage } from './crypto';
+import api from './api';
 
 const WS_BASE = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000';
 
@@ -55,6 +56,23 @@ export function useWebSocket() {
               message.content = decryptMessage(message.content, message.conversation_id);
             }
             addMessage(message.conversation_id, message);
+
+            const activeId = useStore.getState().activeConversationId;
+            if (
+              message.conversation_id === activeId &&
+              message.sender_id !== useStore.getState().currentUser?.id
+            ) {
+              if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+                wsRef.current.send(
+                  JSON.stringify({
+                    type: 'read',
+                    conversation_id: message.conversation_id,
+                  })
+                );
+              }
+              // Also call REST API to persist read status
+              api.conversations.markRead(message.conversation_id).catch(() => {});
+            }
             break;
           }
           case 'message_status': {
@@ -65,6 +83,14 @@ export function useWebSocket() {
               conversation_id: string;
             };
             updateMessageStatus(conversation_id, message_id, user_id, status);
+            break;
+          }
+          case 'read_receipt': {
+            const { conversation_id, user_id } = msg.data as {
+              conversation_id: string;
+              user_id: string;
+            };
+            useStore.getState().markAllMessagesRead(conversation_id, user_id);
             break;
           }
           case 'typing': {
