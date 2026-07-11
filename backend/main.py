@@ -45,3 +45,12 @@ async def startup():
 @app.get("/api/health")
 async def health():
     return {"status": "ok", "service": "signal-clone"}
+
+@app.get("/api/admin/seed-now")
+async def seed_now():
+    from seed import seed
+    try:
+        await seed()
+        return {"status": "success", "message": "Database seeded"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
