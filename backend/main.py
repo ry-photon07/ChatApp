@@ -54,3 +54,18 @@ async def seed_now():
         return {"status": "success", "message": "Database seeded"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+
+@app.get("/api/admin/reset-and-seed")
+async def reset_and_seed():
+    from sqlalchemy import text
+    from app.db.database import engine
+    from seed import seed
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.drop_all)
+            await conn.run_sync(Base.metadata.create_all)
+        await seed()
+        return {"status": "success", "message": "Database reset and reseeded"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
