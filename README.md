@@ -109,7 +109,7 @@ The API will be available at `http://localhost:8000`. You can inspect the intera
 Open `http://localhost:3000` in your web browser.
 
 ---
----
+
 
 ## 🔐 Authentication Method
 
