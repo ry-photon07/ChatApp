@@ -4,6 +4,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 from datetime import datetime
 import os, uuid, aiofiles
+import cloudinary
+import cloudinary.uploader
 
 from app.db.database import get_db
 from app.db.models import Message, MessageStatus, MessageReaction, Attachment, ConversationMember, Conversation
@@ -15,6 +17,11 @@ from app.websocket.manager import manager
 from app.core.config import settings
 
 router = APIRouter()
+cloudinary.config(
+    cloud_name=settings.CLOUDINARY_CLOUD_NAME,
+    api_key=settings.CLOUDINARY_API_KEY,
+    api_secret=settings.CLOUDINARY_API_SECRET,
+)
 
 
 @router.post("/{message_id}/reactions", response_model=ReactionOut)
@@ -148,20 +155,21 @@ async def upload_attachment(
     if len(content) > settings.MAX_FILE_SIZE:
         raise HTTPException(status_code=400, detail="File too large")
 
-    ext = file.filename.split(".")[-1] if file.filename else "bin"
-    filename = f"{uuid.uuid4()}.{ext}"
-    filepath = os.path.join(settings.UPLOAD_DIR, "attachments", filename)
-
-    async with aiofiles.open(filepath, "wb") as f:
-        await f.write(content)
+    result = cloudinary.uploader.upload(
+        content,
+        folder="attachments",
+        public_id=str(uuid.uuid4()),
+        resource_type="auto",
+    )
 
     attachment = Attachment(
         message_id=message_id,
-        file_name=file.filename or filename,
+        file_name=file.filename or "file",
         file_size=len(content),
         mime_type=file.content_type or "application/octet-stream",
-        url=f"/uploads/attachments/{filename}",
+        url=result["secure_url"],
     )
+    
     db.add(attachment)
     await db.commit()
 

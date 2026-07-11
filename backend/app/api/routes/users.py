@@ -3,6 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_
 from typing import List
 import os, uuid, aiofiles
+import cloudinary
+import cloudinary.uploader
 
 from app.db.database import get_db
 from app.db.models import User
@@ -11,6 +13,13 @@ from app.api.deps import get_current_user
 from app.core.config import settings
 
 router = APIRouter()
+
+cloudinary.config(
+    cloud_name=settings.CLOUDINARY_CLOUD_NAME,
+    api_key=settings.CLOUDINARY_API_KEY,
+    api_secret=settings.CLOUDINARY_API_SECRET,
+)
+
 
 
 @router.get("/search", response_model=List[UserOut])
@@ -59,6 +68,9 @@ async def update_profile(
     return current_user
 
 
+
+    
+
 @router.post("/me/avatar", response_model=UserOut)
 async def upload_avatar(
     file: UploadFile = File(...),
@@ -68,20 +80,20 @@ async def upload_avatar(
     if file.content_type not in ["image/jpeg", "image/png", "image/webp", "image/gif"]:
         raise HTTPException(status_code=400, detail="Invalid image format")
 
-    ext = file.filename.split(".")[-1] if file.filename else "jpg"
-    filename = f"{uuid.uuid4()}.{ext}"
-    filepath = os.path.join(settings.UPLOAD_DIR, "avatars", filename)
+    content = await file.read()
+    if len(content) > settings.MAX_FILE_SIZE:
+        raise HTTPException(status_code=400, detail="File too large")
 
-    async with aiofiles.open(filepath, "wb") as f:
-        content = await file.read()
-        if len(content) > settings.MAX_FILE_SIZE:
-            raise HTTPException(status_code=400, detail="File too large")
-        await f.write(content)
+    result = cloudinary.uploader.upload(
+        content,
+        folder="avatars",
+        public_id=str(uuid.uuid4()),
+        resource_type="image",
+    )
 
-    current_user.avatar_url = f"/uploads/avatars/{filename}"
+    current_user.avatar_url = result["secure_url"]
     await db.commit()
     return current_user
-
 
 @router.get("/{user_id}", response_model=UserOut)
 async def get_user(

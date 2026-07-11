@@ -19,9 +19,13 @@ class Settings(BaseSettings):
     ]
 
     UPLOAD_DIR: str = "uploads"
+    CLOUDINARY_CLOUD_NAME: str = ""
+    CLOUDINARY_API_KEY: str = ""
+    CLOUDINARY_API_SECRET: str = ""
     MAX_FILE_SIZE: int = 10 * 1024 * 1024  # 10MB
 
     # Mock OTP - in production this would be sent via SMS
+
     MOCK_OTP: str = "123456"
 
     model_config = {"env_file": ".env", "extra": "ignore"}
