@@ -110,6 +110,20 @@ Open `http://localhost:3000` in your web browser.
 
 ---
 
+
+## 🔐 Authentication Method
+
+This project uses a **mocked OTP-based login flow** to simulate Signal's phone verification, without needing a real SMS provider:
+
+1. **Enter Phone Number:** User enters any of the seeded phone numbers (or a new one, which triggers registration).
+2. **Mock OTP:** Instead of sending a real SMS, the app accepts a fixed OTP code: `123456` for all accounts. This is intentional and documented for testing/demo purposes.
+3. **New vs Existing User:**
+   - If the phone number matches a seeded user → logs in as that user.
+   - If it's a new number → proceeds to profile setup (display name, username, bio).
+4. **Session Persistence:** On successful OTP verification, the backend issues a session (stored via the `sessions` table) so the user stays logged in across refreshes.
+
+**Note:** Real SMS-based verification and cryptographic key exchange are out of scope for this assignment and have been mocked, as explicitly permitted in the assignment brief.
+
 ## 📋 Test Accounts
 
 All accounts use the OTP: `123456`. You can open multiple browser windows (e.g., incognito or different browsers) to test real-time WebSocket communication between these users:
