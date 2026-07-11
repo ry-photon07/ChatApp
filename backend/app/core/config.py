@@ -15,6 +15,7 @@ class Settings(BaseSettings):
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://localhost:3001",
+        "https://chat-app-mu-inky-89.vercel.app",
     ]
 
     UPLOAD_DIR: str = "uploads"
